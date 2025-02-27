@@ -1,5 +1,4 @@
 import authRoutes from "./routes/auth.ts";
-import emailsRoutes from "./routes/emails.ts";
 import { Application, oakCors } from "./deps.ts";
 import { APP_PORT, FRONTEND_URL } from "./configs/constants.ts";
 
@@ -37,8 +36,6 @@ app.use(async (ctx, next) => {
 // Routes
 app.use(authRoutes.routes());
 app.use(authRoutes.allowedMethods());
-app.use(emailsRoutes.routes());
-app.use(emailsRoutes.allowedMethods());
 
 // Start server
 console.log(`Server running on http://localhost:${APP_PORT}`);
