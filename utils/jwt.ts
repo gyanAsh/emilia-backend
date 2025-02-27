@@ -15,7 +15,7 @@ const getKey = async (): Promise<CryptoKey> => {
   const key = await crypto.subtle.importKey(
     "raw",
     keyData,
-    { name: "HMAC", hash: "SHA-256" },
+    { name: "HMAC", hash: "SHA-512" },
     false,
     ["sign", "verify"]
   );

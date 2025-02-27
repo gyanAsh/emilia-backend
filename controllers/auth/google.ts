@@ -44,7 +44,7 @@ export const googleAuth = async (ctx: Context) => {
       path: "/auth/login/google",
       httpOnly: true,
       maxAge: 600, // 10 minutes in seconds
-      sameSite: "strict",
+      sameSite: "lax",
     });
 
     await ctx.cookies.set("code_verifier", codeVerifier, {
@@ -52,7 +52,7 @@ export const googleAuth = async (ctx: Context) => {
       path: "/auth/login/google",
       httpOnly: true,
       maxAge: 600, // 10 minutes in seconds
-      sameSite: "strict",
+      sameSite: "lax",
     });
 
     // Redirect the user to Google's consent screen.
@@ -102,7 +102,6 @@ export const googleAuthCallback = async (ctx: Context) => {
     );
 
     const user = await userResponse.json();
-    console.log({ user });
     const jwt = await createToken(user.id);
 
     const exchangeCode = crypto.randomUUID(); // Generate a unique code
@@ -115,18 +114,39 @@ export const googleAuthCallback = async (ctx: Context) => {
         path: "/auth/login/google",
         httpOnly: true,
         maxAge: 120, // 2 minutes in seconds
-        sameSite: "strict",
+        sameSite: "lax",
       }
     );
 
     // Redirect with the code instead of the token
     ctx.response.redirect(`${FRONTEND_URL}/auth/callback?code=${exchangeCode}`);
-    // Return the JWT (and optionally the tokens from Google).
-    // ctx.response.body = jwt;
-  } catch (error) {
-    console.error("Error in auth callback:", error);
+  } catch (e) {
+    console.error("Error in auth callback:", e);
+    if (e instanceof arctic.OAuth2RequestError) {
+      // Invalid authorization code, credentials, or redirect URI
+      const code = e.code;
+      console.warn({ code });
+    }
+    if (e instanceof arctic.ArcticFetchError) {
+      // Failed to call `fetch()`
+      const cause = e.cause;
+      console.warn({ cause });
+    }
+    if (e instanceof arctic.UnexpectedResponseError) {
+      // Indicates an unexpected response status or unexpected response body content type.
+      const res_error = e.cause;
+      console.warn({ res_error });
+    }
+
+    if (e instanceof arctic.UnexpectedErrorResponseBodyError) {
+      // Indicates an unexpected error response JSON body.
+      const res_error_body = e.cause;
+      console.warn({ res_error_body });
+    }
+
+    //TODO: to keep the backend endpoint safe, if auth fails,redirect user to frontend and show auth-failed there
     ctx.response.status = 500;
-    ctx.response.body = { "Authentication failed": error };
+    ctx.response.body = { "Authentication failed": JSON.stringify(e) };
   }
 };
 

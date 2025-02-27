@@ -7,7 +7,7 @@ const app = new Application();
 // CORS middleware
 app.use(
   oakCors({
-    origin: [FRONTEND_URL, /^.+localhost:(3000|8000)$/],
+    origin: [FRONTEND_URL],
     credentials: true,
   })
 );
