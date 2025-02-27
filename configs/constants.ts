@@ -1,4 +1,4 @@
-export const APP_PORT = parseInt(Deno.env.get("PORT") || "");
+export const APP_PORT = parseInt(Deno.env.get("PORT") || "8000");
 export const JWT_SECRET = Deno.env.get("JWT_SECRET") || "";
 export const JWT_EXP = 60 * 60 * 24 * 7; // 7 days
 export const GMAIL_CLIENT_ID = Deno.env.get("GMAIL_CLIENT_ID") || "";
