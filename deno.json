@@ -1,10 +1,11 @@
 {
   "tasks": {
-    "dev": "deno run --allow-net --allow-env --env --watch main.ts"
+    "dev": "deno run --allow-net --allow-env --env --allow-read --watch server.ts"
   },
   "imports": {
     "@oak/oak": "jsr:@oak/oak@^17.1.4",
     "@std/assert": "jsr:@std/assert@1",
+    "arctic": "npm:arctic@^3.4.0",
     "googleapis": "npm:googleapis@^144.0.0"
   }
 }
