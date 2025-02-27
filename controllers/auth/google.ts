@@ -30,7 +30,7 @@ export const googleAuth = async (ctx: Context) => {
       "https://www.googleapis.com/auth/userinfo.email",
       "https://www.googleapis.com/auth/gmail.modify",
       "https://www.googleapis.com/auth/gmail.send",
-      "https://www.googleapis.com/auth/gmail.compose", // optional
+      "https://www.googleapis.com/auth/gmail.compose",
     ];
     // Create the authorization URL using Arctic's helper.
     const authorizationUrl = google.createAuthorizationURL(
@@ -85,12 +85,12 @@ export const googleAuthCallback = async (ctx: Context) => {
     }
 
     // Exchange the authorization code for tokens using Arctic.
-    const tokens = await google.validateAuthorizationCode(
+    const google_tokens = await google.validateAuthorizationCode(
       code,
       storedCodeVerifier
     );
     // Get user profile with access token
-    const accessToken = tokens.accessToken();
+    const accessToken = google_tokens.accessToken();
     // Fetch user info here.
     const userResponse = await fetch(
       "https://www.googleapis.com/oauth2/v2/userinfo",
@@ -107,13 +107,17 @@ export const googleAuthCallback = async (ctx: Context) => {
 
     const exchangeCode = crypto.randomUUID(); // Generate a unique code
     // Store this code with the user's JWT in a temporary cache with short expiration
-    await ctx.cookies.set(exchangeCode, jwt, {
-      secure: process.env.NODE_ENV === "production", // Set to false for localhost
-      path: "/auth/login/google",
-      httpOnly: true,
-      maxAge: 120, // 2 minutes in seconds
-      sameSite: "strict",
-    });
+    await ctx.cookies.set(
+      exchangeCode,
+      JSON.stringify({ jwt, user, google_tokens }),
+      {
+        secure: process.env.NODE_ENV === "production", // Set to false for localhost
+        path: "/auth/login/google",
+        httpOnly: true,
+        maxAge: 120, // 2 minutes in seconds
+        sameSite: "strict",
+      }
+    );
 
     // Redirect with the code instead of the token
     ctx.response.redirect(`${FRONTEND_URL}/auth/callback?code=${exchangeCode}`);
@@ -135,12 +139,12 @@ export const googleAuthExchangeCode = async (ctx: Context) => {
   try {
     if (!code) throw new Error("Missing Code");
 
-    const jwt = await ctx.cookies.get(code);
+    const data = await ctx.cookies.get(code);
 
-    if (!jwt) throw new Error("Invalid Code");
+    if (!data) throw new Error("Invalid Code");
 
     // Redirect the user to Google's consent screen.
-    return (ctx.response.body = jwt);
+    return (ctx.response.body = JSON.parse(data));
   } catch (error) {
     ctx.response.status = 400;
     ctx.response.body = { message: error };
