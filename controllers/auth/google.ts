@@ -7,6 +7,7 @@ import {
 import { arctic, Context } from "../../deps.ts";
 import process from "node:process";
 import { createToken } from "../../utils/jwt.ts";
+import { fetchEmails } from "../../utils/gmail-emails.ts";
 
 const google = new arctic.Google(
   GMAIL_CLIENT_ID,
@@ -89,9 +90,9 @@ export const googleAuthCallback = async (ctx: Context) => {
       code,
       storedCodeVerifier
     );
-    // Get user profile with access token
+
     const accessToken = google_tokens.accessToken();
-    // Fetch user info here.
+
     const userResponse = await fetch(
       "https://www.googleapis.com/oauth2/v2/userinfo",
       {
@@ -100,26 +101,20 @@ export const googleAuthCallback = async (ctx: Context) => {
         },
       }
     );
-
+    const emails = await fetchEmails(accessToken);
     const user = await userResponse.json();
     const jwt = await createToken(user.id);
 
-    const exchangeCode = crypto.randomUUID(); // Generate a unique code
-    // Store this code with the user's JWT in a temporary cache with short expiration
-    await ctx.cookies.set(
-      exchangeCode,
-      JSON.stringify({ jwt, user, google_tokens }),
-      {
-        secure: process.env.NODE_ENV === "production", // Set to false for localhost
-        path: "/auth/login/google",
-        httpOnly: true,
-        maxAge: 120, // 2 minutes in seconds
-        sameSite: "lax",
-      }
-    );
+    const exchange_code = crypto.randomUUID();
 
-    // Redirect with the code instead of the token
-    ctx.response.redirect(`${FRONTEND_URL}/auth/callback?code=${exchangeCode}`);
+    console.log("Add these data to db and exchange_code", {
+      emails,
+      user,
+      jwt,
+    });
+    ctx.response.redirect(
+      `${FRONTEND_URL}/auth/callback?code=${exchange_code}`
+    );
   } catch (e) {
     console.error("Error in auth callback:", e);
     if (e instanceof arctic.OAuth2RequestError) {
@@ -159,14 +154,20 @@ export const googleAuthExchangeCode = async (ctx: Context) => {
   try {
     if (!code) throw new Error("Missing Code");
 
-    const data = await ctx.cookies.get(code);
+    const data = ""; // Fetch data from db based on exchange_code
 
-    if (!data) throw new Error("Invalid Code");
+    if (!data) throw new Error("No Code Found for exchange.");
+
+    const exchange_data = JSON.parse(data);
+
+    if (exchange_data.exchange_code !== code)
+      throw new Error("Invalid Code : Code missmatch");
 
     // Redirect the user to Google's consent screen.
-    return (ctx.response.body = JSON.parse(data));
-  } catch (error) {
+    ctx.response.body = exchange_data.jwt;
+  } catch (error: any) {
     ctx.response.status = 400;
-    ctx.response.body = { message: error };
+
+    ctx.response.body = { message: error.message };
   }
 };
