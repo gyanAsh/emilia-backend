@@ -5,6 +5,10 @@
   "imports": {
     "@oak/oak": "jsr:@oak/oak@^17.1.4",
     "@std/assert": "jsr:@std/assert@1",
-    "arctic": "npm:arctic@^3.4.0"
+    "@types/pg": "npm:@types/pg@^8.11.11",
+    "arctic": "npm:arctic@^3.4.0",
+    "drizzle-kit": "npm:drizzle-kit@^0.30.5",
+    "drizzle-orm": "npm:drizzle-orm@^0.40.0",
+    "pg": "npm:pg@^8.13.3"
   }
 }
